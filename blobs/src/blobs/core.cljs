@@ -18,7 +18,6 @@
   (let [buf (js/ArrayBuffer. (count v))
         view (js/Int8Array. buf)]
     (doseq [i (range (count v))]
-      (println 'set i (nth v i))
       (aset view i (nth v i)))
     buf))
 
