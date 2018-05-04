@@ -85,9 +85,9 @@
                               (catch :default e
                                 (.log js/console e)
                                 (reset! the-log-messages [(str e)]))))}]
-    [:a {:href "https://github.com/fazzone"} "source code"]
+    [:a {:href "https://github.com/fazzone/opus/tree/master/blobs"} "source code"]
     [:div "to report a bug please use the button below to create a bug report and paste it into a new "
-     [:a {:href "#"} "github issue"]]
+     [:a {:href "https://github.com/fazzone/opus/issues"} "github issue"]]
     [:input {:type "button"
              :value "create bug report"
              :on-click (fn [e]

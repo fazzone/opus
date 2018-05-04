@@ -47,7 +47,7 @@
                ;; lein cljsbuild once min
                {:id "min"
                 :source-paths ["src"]
-                :compiler {:output-to "resources/public/js/compiled/blobs.js"
+                :compiler {:output-to "resources/public/js/compiled/blobs.min.js"
                            :main blobs.core
                            :optimizations :advanced
                            :pretty-print false}}]}
