@@ -4,7 +4,8 @@
 (defn expect
   ([exp val info]
    (when (not= val exp)
-     (println "warning - expected " exp " buf got " val "(" info ")\n"))))
+     (println "warning - expected " exp " buf got " val "(" info ")\n"))
+    val))
 
 ;; STRINGS (byte length + bytes)
 

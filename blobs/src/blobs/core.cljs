@@ -13,6 +13,24 @@
 
 (enable-console-print!)
 
+(defn byte-vec->arraybuffer
+  [v]
+  (let [buf (js/ArrayBuffer. (count v))
+        view (js/Int8Array. buf)]
+    (doseq [i (range (count v))]
+      (println 'set i (nth v i))
+      (aset view i (nth v i)))
+    buf))
+
+(defn download-arraybuffer
+  [buf filename]
+  (let [a (.createElement js/document "a")]
+    (set! (.-href a) (.createObjectURL js/URL (js/Blob. [buf])))
+    (set! (.-download a) filename)
+    (.appendChild js/document.body a)
+    (.click a)
+    (.removeChild js/document.body a)))
+
 (def the-log-messages (atom []))
 
 (r/defc log-window < r/reactive []
@@ -33,6 +51,7 @@
 
 
 (def the-file-arraybuffer (atom nil))
+(def the-file-name (atom "xD.solution"))
 
 (r/defcs root [state]
   [:div {:style {:display "flex" :height "98vh"}}
@@ -48,6 +67,7 @@
                                     (fn [fe]
                                       (let [buf (.. fe -target -result)
                                             _ (reset! the-file-arraybuffer buf)
+                                            _ (reset! the-file-name (.-name file))
                                             parse-output (with-out-str
                                                            (vreset! parsed
                                                                     (-> buf bbuf/from-arraybuffer csol/read-solution)))]
@@ -57,41 +77,38 @@
     [:input {:type "button"
              :value "download solution file"
              :on-click (fn [e]
-                         (println 'contents= (deref the-text-contents))
-                         (try (fipp/pprint (edn/read-string @the-text-contents))
+                         (try (-> @the-text-contents
+                                  (edn/read-string)
+                                  (csol/write-solution)
+                                  (byte-vec->arraybuffer)
+                                  (download-arraybuffer @the-file-name))
                               (catch :default e
                                 (.log js/console e)
-                                (reset! the-log-messages [(str e)])))
-                         #_(set! (.. js/window -location -href) (.createObjectURL js/URL (js/Blob. [(deref the-text-contents)]))))}]
+                                (reset! the-log-messages [(str e)]))))}]
     [:a {:href "https://github.com/fazzone"} "source code"]
     [:div "to report a bug please use the button below to create a bug report and paste it into a new "
      [:a {:href "#"} "github issue"]]
     [:input {:type "button"
              :value "create bug report"
              :on-click (fn [e]
-                         (let [file-data (atom nil)]
-                           (when-let [b @the-file-arraybuffer]
+                         (let [report {:messages @the-log-messages
+                                       :text-contents @the-text-contents}
+                               make-report (fn [d] (reset! the-text-contents (pr-str (assoc report :file-data d))))]
+                           (if-let [b @the-file-arraybuffer]
                              (let [rdr (js/FileReader.)]
-                               (set! (.-onload rdr) (fn [fe] (reset! file-data (.. fe -target -result))))
-                               (.readAsDataURL rdr (js/Blob. [b]))))
-                           (reset! the-text-contents
-                                   (pr-str
-                                     {:messages @the-log-messages
-                                      :text-contents @the-text-contents
-                                      :file-data @file-data}))))}]]
+                               (set! (.-onload rdr)
+                                     (fn [fe]
+                                       (make-report (.. fe -target -result))))
+                               (.readAsDataURL rdr (js/Blob. [b])))
+                             (make-report nil))))}]]
    (output)])
 
 (defn mount-root
   []
-  (print 'mount-root)
   (r/mount (root) (.getElementById js/document "app")))
 
 (defn on-js-reload []
-  ;; optionally touch your app-state to force rerendering depending on
-  ;; your application
-  ;; (swap! app-state update-in [:__figwheel_counter] inc)
-  (mount-root)
-  (println (ccommon/string->byte-vec "hello world")))
+  (mount-root))
 
 (mount-root)
 
