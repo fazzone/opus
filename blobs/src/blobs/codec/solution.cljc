@@ -153,5 +153,13 @@
 (defn write-solution
   [{:keys [objects] :as sol}]
   (concat
-    (write-solution-header sol)
+    (write-solution-header
+      (update sol :nobjects
+        (fn [n]
+          (let [c (count objects)]
+            (when (not= n c)
+              (println ":nobjects seems wrong - replacing" n "with" c))
+            c))
+        #(or % (count objects))))
     (mapcat write-object objects)))
+

@@ -76,14 +76,19 @@
     [:input {:type "button"
              :value "download solution file"
              :on-click (fn [e]
-                         (try (-> @the-text-contents
-                                  (edn/read-string)
-                                  (csol/write-solution)
-                                  (byte-vec->arraybuffer)
-                                  (download-arraybuffer @the-file-name))
-                              (catch :default e
-                                (.log js/console e)
-                                (reset! the-log-messages [(str e)]))))}]
+                         (try
+                           (reset! the-log-messages [])
+                           (let [write-output
+                                 (with-out-str
+                                   (-> @the-text-contents
+                                       (edn/read-string)
+                                       (csol/write-solution)
+                                       (byte-vec->arraybuffer)
+                                       (download-arraybuffer @the-file-name)))]
+                             (swap! the-log-messages into (string/split write-output #"\n")))
+                           (catch :default e
+                             (.log js/console e)
+                             (swap! the-log-messages conj (str e)))))}]
     [:a {:href "https://github.com/fazzone/opus/tree/master/blobs"} "source code"]
     [:div "to report a bug please use the button below to create a bug report and paste it into a new "
      [:a {:href "https://github.com/fazzone/opus/issues"} "github issue"]]
